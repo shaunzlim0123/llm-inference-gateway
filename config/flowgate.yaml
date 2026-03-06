@@ -1,0 +1,86 @@
+server:
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 120s
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+
+cache:
+  enabled: true
+  similarity_threshold: 0.92
+  ttl: 1h
+  embedding_model: "text-embedding-3-small"
+  embedding_dimensions: 512
+
+providers:
+  openai:
+    api_key: ""
+    base_url: "https://api.openai.com/v1"
+    models:
+      - name: "gpt-4o-mini"
+        complexity: simple
+        cost_per_1k_input: 0.00015
+        cost_per_1k_output: 0.0006
+      - name: "gpt-4o"
+        complexity: complex
+        cost_per_1k_input: 0.0025
+        cost_per_1k_output: 0.01
+    circuit_breaker:
+      max_requests: 5
+      interval: 60s
+      timeout: 30s
+      failure_threshold: 3
+
+  anthropic:
+    api_key: ""
+    base_url: "https://api.anthropic.com"
+    models:
+      - name: "claude-sonnet-4-20250514"
+        complexity: medium
+        cost_per_1k_input: 0.003
+        cost_per_1k_output: 0.015
+    circuit_breaker:
+      max_requests: 5
+      interval: 60s
+      timeout: 30s
+      failure_threshold: 3
+
+  ollama:
+    base_url: "http://localhost:11434"
+    models:
+      - name: "llama3.2"
+        complexity: simple
+        cost_per_1k_input: 0
+        cost_per_1k_output: 0
+    circuit_breaker:
+      max_requests: 3
+      interval: 60s
+      timeout: 15s
+      failure_threshold: 2
+
+routing:
+  strategy: "complexity"
+  complexity:
+    simple_max_score: 30
+    medium_max_score: 70
+  fallback_order: [openai, anthropic, ollama]
+
+tenants:
+  - id: "tenant-acme"
+    api_key: ""
+    name: "Acme Corp"
+    token_budget:
+      daily_limit: 1000000
+      monthly_limit: 20000000
+    rate_limit:
+      requests_per_minute: 60
+    allowed_models: []
+    default_model: ""
+    max_context_tokens: 8192
+
+observability:
+  metrics_path: "/metrics"
+  log_level: "info"
+  log_format: "json"
